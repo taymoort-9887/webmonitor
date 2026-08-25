@@ -2,9 +2,9 @@ name: FPSC 24/7 Page Monitor
 
 on:
   schedule:
-    # Runs automatically every 30 minutes
-    - cron: '*/30 * * * *'
-  workflow_dispatch: # Allows manual trigger button from GitHub interface
+    # Runs at 14 and 44 minutes past every hour (avoids peak traffic queue)
+    - cron: '14,44 * * * *'
+  workflow_dispatch:
 
 jobs:
   check-updates:
