@@ -7,11 +7,13 @@ import urllib.request
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# The 3 FPSC pages to track
+# All tracked FPSC pages
 PAGES = {
     "New Job Advertisements (GR)": "https://www.fpsc.gov.pk/Jobs?section=GR",
     "Job Syllabuses (GR)": "https://www.fpsc.gov.pk/Syllabuses?section=GR%20Syllabus",
-    "Job Nominations": "https://www.fpsc.gov.pk/Results?section=Nominations"
+    "Job Nominations": "https://www.fpsc.gov.pk/Results?section=Nominations",
+    "Merit Lists": "https://www.fpsc.gov.pk/Results?section=Merit%20List",
+    "Shortlisting": "https://www.fpsc.gov.pk/Results?section=Short%20Listing"
 }
 
 STATE_FILE = "seen_items.json"
@@ -138,11 +140,13 @@ def main():
     else:
         seen_data = {}
 
-    is_first_run = len(seen_data) == 0
     new_found = False
 
     for category, page_url in PAGES.items():
         print(f"Checking: {category}...")
+        # Check if this category is being scanned for the very first time
+        is_category_first_run = category not in seen_data
+
         current_items = fetch_page_items(page_url)
         known_links = set(seen_data.get(category, []))
 
@@ -152,22 +156,20 @@ def main():
                 known_links.add(link)
                 new_found = True
 
-                if is_first_run:
-                    print(f"Initial discovery: [{item['title']}]({link})")
+                if is_category_first_run:
+                    print(f"Initial discovery for [{category}]: {item['title']}")
                 else:
                     print(f"🚨 NEW ITEM DETECTED: {item['title']}")
                     send_email_alert(category, item['title'], link)
 
         seen_data[category] = list(known_links)
 
-    # Save current state
+    # Save state back
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(seen_data, f, indent=2)
 
-    if is_first_run:
-        print("First run complete. Current existing items memorized. Future runs will alert on new uploads.")
-    elif new_found:
-        print("New updates were found and alerts were dispatched.")
+    if new_found:
+        print("Updated state and processed items.")
     else:
         print("No new uploads detected.")
 
